@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Futebas</title>
+    <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+    <script>
+      AFRAME.registerComponent('move-ball', {
+        schema: {
+          limitX: { type: 'number', default: 3.8 },
+          minZ: { type: 'number', default: 3.5 },
+          initialSpeed: { type: 'number', default: 0.15 },
+          deceleration: { type: 'number', default: 0.001 }
+        },
+        init: function () {
+          this.ball = document.querySelector('[gltf-model="#soccer_ball"]')
+          this.audio = document.querySelector('#goal-sound')
+          this.moving = false
+          this.speed = 0
+          this.direction = { x: 1, z: 0 }
+        },
+        tick: function () {
+          if (!this.moving) return
+
+          const currentPos = this.ball.getAttribute('position')
+
+          const newPos = {
+            x: currentPos.x + this.speed * this.direction.x,
+            y: currentPos.y,
+            z: currentPos.z + this.speed * this.direction.z
+          }
+
+          if (newPos.x <= this.data.limitX && newPos.z >= this.data.minZ) {
+            this.ball.setAttribute('position', newPos)
+          } else {
+            this.moving = false
+          }
+
+          if (newPos.x >= this.data.limitX) {
+            if (!this.audio.paused) {
+              this.audio.currentTime = 0
+            }
+            this.audio.play()
+          }
+
+          this.speed = Math.max(this.speed - this.data.deceleration, 0)
+          if (this.speed === 0) {
+            this.moving = false
+          }
+        },
+        events: {
+          click: function () {
+            if (!this.moving) {
+              this.moving = true
+              this.speed = this.data.initialSpeed
+            }
+          }
+        }
+      })
+
+      AFRAME.registerComponent('reset-ball', {
+        init: function () {
+          const ball = document.querySelector('[gltf-model="#soccer_ball"]')
+          const originalPosition = { x: -3.23, y: 0.318, z: 3.642 }
+          const originalRotation = { x: 0, y: 0, z: 0 }
+
+          this.el.addEventListener('click', () => {
+            ball.setAttribute('position', originalPosition)
+            ball.setAttribute('rotation', originalRotation)
+            console.log(
+              'Ball reset to original position and rotation:',
+              originalPosition,
+              originalRotation
+            )
+          })
+        }
+      })
+    </script>
+  </head>
+  <body>
+    <a-scene>
+      <a-assets>
+        <img id="chao" src="./texturas/green-fake-grass-background.jpg" />
+        <a-asset-item
+          id="soccer_ball"
+          src="./assets/elementos/soccer_ball.glb"
+        ></a-asset-item>
+        <a-asset-item
+          id="soccer_goal"
+          src="./assets/elementos/soccer_goal.glb"
+        ></a-asset-item>
+        <a-asset-item
+          id="nasa_computer"
+          src="./assets/elementos/old_nasa_style_computer_console.glb"
+        ></a-asset-item>
+        <audio
+          id="goal-sound"
+          src="./assets/sons/goal_sound_effect.mp3"
+        ></audio>
+      </a-assets>
+
+      <a-camera position="0 1.60 -3.169" rotation="5.157 -180 0">
+        <a-cursor></a-cursor>
+      </a-camera>
+
+      <a-entity
+        gltf-model="#soccer_goal"
+        position="3.536 0 3.642"
+        scale="0.003 0.003 0.003"
+        rotation="0 180 0"
+      ></a-entity>
+
+      <a-entity
+        gltf-model="#soccer_ball"
+        position="-3.23 0.318 3.642"
+        rotation="0 0 0"
+        scale="0.3 0.3 0.3"
+        move-ball="limitX: 3.8; minZ: 3.5; initialSpeed: 0.5; deceleration: 0.01"
+      ></a-entity>
+
+      <a-entity
+        gltf-model="#nasa_computer"
+        position="0 0 0"
+        scale="0.5 0.5 0.5"
+        rotation="0 180 0"
+      ></a-entity>
+
+      <a-cylinder
+        scale="0.06 0.06 0.06"
+        position="-0.24 1.223 -0.863"
+        rotation="0.642 0 0"
+        color="crimson"
+        height="1"
+        radius="1.5"
+        move-ball
+      ></a-cylinder>
+
+      <a-cylinder
+        scale="0.06 0.06 0.06"
+        position="0.297 1.230 -0.867"
+        rotation="0.642 0 0"
+        color="blue"
+        height="1"
+        radius="1.5"
+        reset-ball
+      ></a-cylinder>
+
+      <a-plane
+        material="src:#chao"
+        rotation="-90 0 0"
+        repeat="5 5"
+        scale="10 10 1"
+      ></a-plane>
+
+      <a-sky color="C3C3C3"></a-sky>
+    </a-scene>
+  </body>
+</html>
